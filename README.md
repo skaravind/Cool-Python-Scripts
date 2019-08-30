@@ -1,7 +1,7 @@
 # Cool-Python-Scripts
 Python scripts that i coded to do various stuff (mostly for fun).
 
-1. Encryption.py - A badly implemented RSA understanding script
+1. Encryption.py - A basic script implementation for understanding RSA
 
 2. ranking.py - a script that downloads spi of NITRR students and ranks them
 
